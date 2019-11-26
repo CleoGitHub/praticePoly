@@ -1,10 +1,11 @@
-var Encore = require('@symfony/webpack-encore');
-
-// Manually configure the runtime environment if not already configured yet by the "encore" command.
-// It's useful when you use tools that rely on webpack.config.js file.
-if (!Encore.isRuntimeEnvironmentConfigured()) {
-    Encore.configureRuntimeEnvironment(process.env.NODE_ENV || 'dev');
-}
+// var Encore = require('@symfony/webpack-encore');
+// const VuetifyLoaderPlugin = require('vuetify-loader/lib/plugin');
+//
+// // Manually configure the runtime environment if not already configured yet by the "encore" command.
+// // It's useful when you use tools that rely on webpack.config.js file.
+// if (!Encore.isRuntimeEnvironmentConfigured()) {
+//     Encore.configureRuntimeEnvironment(process.env.NODE_ENV || 'dev');
+// }
 
 // Encore
 //     // directory where compiled assets will be stored
@@ -71,14 +72,37 @@ if (!Encore.isRuntimeEnvironmentConfigured()) {
 //     //.addEntry('admin', './assets/js/admin.js')
 // ;
 
+var Encore = require('@symfony/webpack-encore');
+const VuetifyLoaderPlugin = require('vuetify-loader/lib/plugin')
+
+if (!Encore.isRuntimeEnvironmentConfigured()) {
+    Encore.configureRuntimeEnvironment(process.env.NODE_ENV || 'dev');
+}
+
 Encore
     .setOutputPath('public/build/')
     .setPublicPath('/build')
+    .enableVueLoader() // <-- IMPORTANT: this loads Vue
+    // NOTE: I put my Vue app in assets/vue which I think is non-standard
+    //       but it allows me to structure my Vue app as I would in a non-Symfony app
+    .addEntry('app', './assets/js/app.js')
+    .splitEntryChunks()
+    .enableSingleRuntimeChunk()
     .cleanupOutputBeforeBuild()
+    .enableBuildNotifications()
     .enableSourceMaps(!Encore.isProduction())
     .enableVersioning(Encore.isProduction())
-    .addEntry('app', './assets/js/main.js')
-    .enableVueLoader()
+    .configureBabel(() => {}, {
+        useBuiltIns: 'usage',
+        corejs: 3
+    })
+    // add VuetifyLoaderPlugin: THIS loads all of the Vuetify components
+    .addPlugin(new VuetifyLoaderPlugin())
+    // enables Sass/SCSS support
+    .enableSassLoader(options => {
+        options.implementation = require('sass')
+        options.fiber = require('fibers')
+    })
 ;
 
 module.exports = Encore.getWebpackConfig();
